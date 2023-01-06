@@ -27,6 +27,9 @@ class ConfirmController {
   async exchange(req, res) {
     const { orderId } = req.params;
     try {
+      return res
+        .status(200)
+        .json({ status: "success", message: "Order exchanged" });
     } catch (error) {
       return res.status(500).json({ status: "error", message: error.message });
     }
@@ -36,6 +39,9 @@ class ConfirmController {
   async return(req, res) {
     const { orderId } = req.params;
     try {
+      return res
+        .status(200)
+        .json({ status: "success", message: "Order returned" });
     } catch (error) {
       return res.status(500).json({ status: "error", message: error.message });
     }
