@@ -24,6 +24,23 @@ class ConfirmController {
     }
     // ...
   }
+  async exchange(req, res) {
+    const { orderId } = req.params;
+    try {
+    } catch (error) {
+      return res.status(500).json({ status: "error", message: error.message });
+    }
+    // ...
+  }
+
+  async return(req, res) {
+    const { orderId } = req.params;
+    try {
+    } catch (error) {
+      return res.status(500).json({ status: "error", message: error.message });
+    }
+    // ...
+  }
 }
 
 module.exports = new ConfirmController();

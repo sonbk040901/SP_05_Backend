@@ -1,5 +1,5 @@
 const ApiRouter = require("express").Router();
-const confirm = require("./confirm");
-ApiRouter.use("/confirm", confirm);
 
+ApiRouter.use("/confirm", require("./confirm"));
+ApiRouter.use("/receivable", require("./receivable"));
 module.exports = ApiRouter;
