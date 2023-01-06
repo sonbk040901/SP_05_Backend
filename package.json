@@ -23,6 +23,7 @@
   },
   "homepage": "https://github.com/sonbk040901/SP_05_Backend#readme",
   "dependencies": {
+    "axios": "^1.2.2",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",

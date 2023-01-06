@@ -1,3 +1,5 @@
+const axios = require("axios");
+const { response } = require("express");
 const sendReqToTranferService = async (order) => {
   const body = parseRequestTranferService(order);
   return { status: "success", message: "Tranfer success" };
@@ -5,23 +7,19 @@ const sendReqToTranferService = async (order) => {
 const sendReqToWarehouseService = async (order) => {
   const body = parseRequestWarehouseService(order);
   try {
-    const response = await fetch(
+    const response = await axios.post(
       "https://ltct-warehouse-backend.onrender.com/api/export",
+      body,
       {
-        method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(body),
       }
     );
-    const data = await response.json();
-    if (response.status != 200) {
-      throw new Error(data.message);
-    }
+    const data = response.data;
     return data;
   } catch (error) {
-    throw error;
+    throw new Error(error.response.data.message);
   }
 };
 const parseRequestTranferService = (order) => {
