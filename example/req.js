@@ -2,7 +2,28 @@ const axios = require("axios");
 const { response } = require("express");
 const sendReqToTranferService = async (order) => {
   const body = parseRequestTranferService(order);
-  return { status: "success", message: "Tranfer success" };
+  try {
+    const response = await axios.post(
+      "http://tungsnk.tech:8082/api/shipping_order",
+      body,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    const data = response.data;
+    if (!data.result.ok) {
+      throw new Error(data.result.message);
+    }
+    return data;
+  } catch (error) {
+    throw new Error(
+      (error.message ||
+        error.response.data.error ||
+        error.response.data.result) + " from transfer service"
+    );
+  }
 };
 const sendReqToWarehouseService = async (order) => {
   const body = parseRequestWarehouseService(order);
@@ -19,23 +40,24 @@ const sendReqToWarehouseService = async (order) => {
     const data = response.data;
     return data;
   } catch (error) {
-    throw new Error(error.response.data.message);
+    throw new Error(error.response.data.message + " from warehouse service");
   }
 };
 const parseRequestTranferService = (order) => {
   const {
-    id: order_id,
+    id: orderId,
     warehouse = {
       address: {
-        ward: "Bách Khoa",
-        district: "Hai Bà Trưng",
-        province: "Hà Nội",
+        ward: "1A0302",
+        district: "1488",
+        province: "201",
         detail: "Số 1 Đại Cồ Việt, Bách Khoa, Hai Bà Trưng, Hà Nội",
       },
     },
     customer: receiver,
     total,
     cod = total,
+    weigth = 0,
     details,
   } = order;
   const products = details.map((detail) => {
@@ -47,10 +69,10 @@ const parseRequestTranferService = (order) => {
       color,
       size,
       price,
-      quantity,
+      quantity: quantity.toString(),
     };
   });
-  const body = { order_id, warehouse, receiver, cod, products };
+  const body = { orderId, warehouse, receiver, cod, weigth, products };
   return body;
 };
 const parseRequestWarehouseService = (order) => {
