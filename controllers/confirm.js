@@ -1,16 +1,19 @@
 const {
   sendReqToTranferService,
   sendReqToWarehouseService,
+  getOrderById,
 } = require("../example/req");
 class ConfirmController {
-  // ...
+  /**
+   *
+   * @param {Request} req
+   * @param {Response} res
+   * @returns {Promise<Response>}
+   */
   async order(req, res) {
-    if (!req.body?.data?.order) {
-      return res
-        .status(400)
-        .json({ status: "error", message: "Order not found" });
-    }
-    const order = req.body.data.order;
+    const { orderId } = req.params;
+    const order = await getOrderById(orderId);
+
     try {
       const serviceRes = await Promise.all([
         sendReqToTranferService(order),
