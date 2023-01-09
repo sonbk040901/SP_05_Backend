@@ -170,9 +170,7 @@ const getOrderById = async (orderId) => {
 };
 /**
  * @brief API get all order from order service
- * @param {string} type - year or month
- * @param {number} year
- * @param {number} month
+ * @param {{type: string,year: number,month: number}} query
  * @returns {Promise<[orderExample]>}
  */
 const getAllOrders = async ({ type, year, month }) => {
@@ -284,7 +282,7 @@ const parseOrder = async (order) => {
     orderId,
     receiver,
     products,
-    cod,
+    cod: Math.floor(cod / 1000) * 1000,
     createdAt: created_at,
     updateAt: update_at,
     startAt: shiptime_start_at,
