@@ -181,7 +181,8 @@ const getAllOrders = async ({ type, year, month }) => {
     else {
       let res1 = JSON.parse(
         fs.readFileSync(
-          "/home/sonle/Desktop/GITHUB/SP_05_Backend/mock/mock.json"
+          path.join(__dirname.substring(0, 40), "mock/mock.json"),
+          "utf8"
         )
       );
       response = { data: res1 };
