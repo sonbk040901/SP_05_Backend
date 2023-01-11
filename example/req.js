@@ -181,7 +181,7 @@ const getAllOrders = async ({ type, year, month }) => {
     else {
       let res1 = JSON.parse(
         fs.readFileSync(
-          path.join(__dirname.substring(0, 40), "mock/mock.json"),
+          path.join(__dirname.replace("example", "mock/mock.json"), ""),
           "utf8"
         )
       );
