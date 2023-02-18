@@ -13,7 +13,6 @@ class ConfirmController {
   async order(req, res) {
     const { orderId } = req.params;
     const order = await getOrderById(orderId);
-
     try {
       const serviceRes = await Promise.all([
         sendReqToTranferService(order),
@@ -23,6 +22,7 @@ class ConfirmController {
         .status(200)
         .json({ status: "success", message: "Order confirmed", serviceRes });
     } catch (error) {
+      console.log(error);
       return res.status(500).json({ status: "error", message: error.message });
     }
     // ...

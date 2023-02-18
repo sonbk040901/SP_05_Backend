@@ -41,12 +41,15 @@ class StatisticsController {
       };
       return res.status(200).json({
         status: "success",
-        data: { orders: parsedOrders, statistics },
+        data: { statistics },
       });
     } catch (error) {
       return res.status(500).json({ status: "error", message: error.message });
     }
   }
+  /**
+   * @deprecated
+   */
   async test(req, res) {
     const orders = [];
     try {
@@ -61,6 +64,7 @@ class StatisticsController {
   /**
    *  @brief Generate a random order
    * @param {number} num
+   * @deprecated
    */
   gen(num) {
     //random a date betwen 2018-01-01 and 2022-01-10

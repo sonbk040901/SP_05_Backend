@@ -6,8 +6,10 @@ const BASE_URL_TRANSFER = process.env.BASE_URL_TRANSFER;
 const BASE_URL_WAREHOUSE = process.env.BASE_URL_WAREHOUSE;
 const BASE_URL_PRODUCTION = process.env.BASE_URL_PRODUCTION;
 const BASE_URL_ORDER = process.env.BASE_URL_ORDER || "";
+const BASE_URL_USER = process.env.BASE_URL_USER || "";
 const sendReqToTranferService = async (order) => {
-  const body = parseRequestTranferService(order);
+  const body = await parseRequestTranferService(order);
+  console.log(body);
   try {
     const response = await axios.post(
       BASE_URL_TRANSFER + "shipping_order",
@@ -19,15 +21,15 @@ const sendReqToTranferService = async (order) => {
       }
     );
     const data = response.data;
-    if (!data.result.ok) {
-      throw new Error(data.result.message);
+    if (!data?.result?.ok) {
+      throw new Error(data?.result?.message);
     }
     return data;
   } catch (error) {
     throw new Error(
-      (error.message ||
-        error.response.data.error ||
-        error.response.data.result) + " from transfer service"
+      (error?.message ||
+        error?.response?.data.error ||
+        error?.response?.data?.result) + " from transfer service"
     );
   }
 };
@@ -42,10 +44,14 @@ const sendReqToWarehouseService = async (order) => {
     const data = response.data;
     return data;
   } catch (error) {
-    throw new Error(error.response.data.message + " from warehouse service");
+    console.log(error);
+    throw new Error(
+      error.response.data?.message ||
+        error.response.data?.error + " from warehouse service"
+    );
   }
 };
-const parseRequestTranferService = (order = orderExample) => {
+const parseRequestTranferService = async (order = orderExample) => {
   const {
     orderId,
     warehouse = {
@@ -56,8 +62,8 @@ const parseRequestTranferService = (order = orderExample) => {
         detail: "Số 1 Đại Cồ Việt, Bách Khoa, Hai Bà Trưng, Hà Nội",
       },
     },
-    name = "Nguyễn Văn A",
-    phone = "0123456789",
+    // name = "Nguyễn Văn A",
+    // phone = "0123456789",
     DistrictID,
     ProvinceID,
     WardCode,
@@ -67,9 +73,10 @@ const parseRequestTranferService = (order = orderExample) => {
     weigth = 0,
     products: details,
   } = order;
+  const user = await getUserById(order.userId);
   const receiver = {
-    name,
-    phone,
+    name: user.name,
+    phone: user.phoneNumber,
     address: {
       ward: WardCode,
       district: DistrictID,
@@ -147,6 +154,7 @@ const getProductByItemId = async (itemId) => {
       BASE_URL_PRODUCTION + `sub-products/${itemId}`
     );
     const data = response.data;
+    if (data === null) throw new Error("Item not found");
     return data;
   } catch (error) {
     throw new Error(error.response.data.message + " from production service");
@@ -155,17 +163,20 @@ const getProductByItemId = async (itemId) => {
 /**
  * @brief API get order by id
  * @param {string} orderId
- * @returns {}
+ * @returns {Promise<orderExample>}
  */
 const getOrderById = async (orderId) => {
   let response;
+  let url;
   try {
-    if (BASE_URL_ORDER) response = await axios.get(BASE_URL_ORDER + orderId);
+    url = BASE_URL_ORDER + `getOrderById/${orderId}`;
+    console.log(url);
+    if (BASE_URL_ORDER) response = await axios.get(url);
     else response = { data: { ...orderExample, orderId } };
-    const data = response.data;
+    const data = response.data[0];
     return data;
   } catch (error) {
-    throw new Error(error.response.data.message + " from order service");
+    throw new Error(error + " from order service");
   }
 };
 /**
@@ -173,12 +184,13 @@ const getOrderById = async (orderId) => {
  * @param {{type: string,year: number,month: number}} query
  * @returns {Promise<[orderExample]>}
  */
-const getAllOrders = async ({ type, year, month }) => {
+const getAllOrders = async ({ type, year, month, status }) => {
   /** @type {{data: [orderExample]}} */
   let response;
   try {
-    if (BASE_URL_ORDER) response = await axios.get(BASE_URL_ORDER + "showAll");
-    else {
+    if (BASE_URL_ORDER) {
+      response = await axios.get(BASE_URL_ORDER + "listOrderByUser/21");
+    } else {
       let res1 = JSON.parse(
         fs.readFileSync(
           path.join(__dirname.replace("example", "mock/mock.json"), ""),
@@ -187,10 +199,10 @@ const getAllOrders = async ({ type, year, month }) => {
       );
       response = { data: res1 };
     }
-    const data = response.data;
+    let data = response.data;
     if (type) {
-      return data.filter((order) => {
-        const date = new Date(order.completed_at);
+      data = data.filter((order) => {
+        let date = new Date(order.completed_at);
         switch (type) {
           case "year":
             return date.getFullYear() == year;
@@ -201,11 +213,55 @@ const getAllOrders = async ({ type, year, month }) => {
         }
       });
     }
+    if (status) {
+      switch (status) {
+        case "PENDING": //Đang chờ xác nhận
+          status = "đang chờ";
+          break;
+        case "ACCEPT": //Đã xác nhận(chờ lấy hàng)
+          status = "chờ lấy hàng";
+          break;
+        case "REJECT": //Đã hủy
+          status = "đã hủy";
+          break;
+        case "DELIVERING": //Đang giao hàng
+          status = "đang giao";
+          break;
+        case "DELIVERED": //Đã giao hàng
+          status = "đã giao";
+          break;
+        case "SUCCESS": //Đã hoàn thành
+          status = "thành công";
+          break;
+        case "RETURN": //Đã trả hàng
+          status = "trả hàng-hoàn tiền";
+          break;
+        case "EXCHANGE": //Đã đổi hàng
+          status = "đổi hàng";
+          break;
+        default:
+          break;
+      }
+      data = data.filter((order) => order.status == status);
+    }
     return data;
   } catch (error) {
     throw new Error(
       error.response?.data?.message || error.message + " from order service"
     );
+  }
+};
+
+const getUserById = async (userId) => {
+  let url = BASE_URL_USER + `user`;
+  let response;
+  try {
+    response = await axios.get(url);
+    const users = response.data;
+    const user = users.find((user) => user.id == userId);
+    return user;
+  } catch (error) {
+    throw new Error(error + " from user service");
   }
 };
 const API_GET_PROVINCE =
@@ -283,6 +339,8 @@ const parseOrder = async (order) => {
     orderId,
     receiver,
     products,
+    status,
+    payment_method,
     cod: Math.floor(cod / 1000) * 1000,
     createdAt: created_at,
     updateAt: update_at,
@@ -299,6 +357,7 @@ module.exports = {
   getOrderById,
   getAllOrders,
   parseOrder,
+  getUserById,
 };
 
 const orderExample = {
