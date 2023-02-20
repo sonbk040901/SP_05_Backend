@@ -2,7 +2,7 @@ const {
   sendReqToTranferService,
   sendReqToWarehouseService,
   getOrderById,
-} = require("../example/req");
+} = require("../api");
 class ConfirmController {
   /**
    *

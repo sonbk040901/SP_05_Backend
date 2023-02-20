@@ -1,5 +1,7 @@
-const { getAllOrders, parseOrder } = require("../example/req");
+const { getAllOrders } = require("../api");
 const { order } = require("./confirm");
+const OrderUtil = require("../utils/order");
+const CalcUtil = require("../utils/calculate");
 class StatisticsController {
   /**
    * @brief Get statistics
@@ -8,37 +10,65 @@ class StatisticsController {
    */
   async statistics(req, res) {
     try {
-      const orders = await getAllOrders(req.query);
-      const parsedOrders = await Promise.all(
-        orders.map(async (order) => await parseOrder(order))
-      );
+      /**
+       * @type {{type: string,year: number,month: number,status: string}}
+       */
+      const query = req.query;
+      const orders = await getAllOrders(query);
+      let date = new Date(query.year, query.month);
+      if (query.type === "month") {
+        date.setMonth(date.getMonth() - 1);
+        query.month = date.getMonth();
+      } else if (query.type === "year") {
+        date.setFullYear(date.getFullYear() - 1);
+        query.year = date.getFullYear();
+      }
+      const prvOrders = await getAllOrders(query);
+      const parsedOrders = await OrderUtil.parseMultiOrder(orders);
+      const parsedPrvOrders = await OrderUtil.parseMultiOrder(prvOrders);
       const { totalCapital, totalPrices, totalQuantities } =
-        parsedOrders.reduce(
-          (acc, order) => {
-            const { products, cod } = order;
-            acc.totalCapital += products.reduce(
-              (acc, product) => acc + (product.price - 0),
-              0
-            );
-            acc.totalPrices += cod;
-            acc.totalQuantities += products.reduce(
-              (acc, product) => acc + (product.quantity - 0),
-              0
-            );
-            return acc;
-          },
-          {
-            totalCapital: 0,
-            totalPrices: 0,
-            totalQuantities: 0,
-          }
-        );
+        OrderUtil.statistics(parsedOrders);
+      const { totalCapital: prvTotalCapital, totalPrices: prvTotalPrices } =
+        OrderUtil.statistics(parsedPrvOrders);
       const statistics = {
         totalRevenue: totalPrices - totalCapital,
         totalCapital,
         totalPrices,
         totalQuantities,
+        growthPercentage: {
+          totalRevenue: CalcUtil.calculatePercentage(
+            prvTotalPrices - prvTotalCapital,
+            totalPrices - totalCapital
+          ),
+          totalCapital: CalcUtil.calculatePercentage(
+            prvTotalCapital,
+            totalCapital
+          ),
+          totalPrices: CalcUtil.calculatePercentage(
+            prvTotalPrices,
+            totalPrices
+          ),
+        },
       };
+      return res.status(200).json({
+        status: "success",
+        data: { statistics },
+      });
+    } catch (error) {
+      return res.status(500).json({ status: "error", message: error.message });
+    }
+  }
+  /**
+   *
+   * @param {Request} req
+   * @param {Response} res
+   */
+  async statisticsYear(req, res) {
+    try {
+      const orders = await getAllOrders(req.query);
+      const parsedOrders = await OrderUtil.parseMultiOrder(orders);
+      // console.log(parsedOrders[0]);
+      const statistics = OrderUtil.statisticsYear(parsedOrders);
       return res.status(200).json({
         status: "success",
         data: { statistics },
