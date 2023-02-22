@@ -1,7 +1,10 @@
 const {
   sendReqToTranferService,
   sendReqToWarehouseService,
+  sendRedeliverReqToTranferService,
+  sendReturnReqToTranferService,
   getOrderById,
+  updateOrderStatus,
 } = require("../api");
 class ConfirmController {
   /**
@@ -12,11 +15,12 @@ class ConfirmController {
    */
   async order(req, res) {
     const { orderId } = req.params;
-    const order = await getOrderById(orderId);
     try {
+      const order = await getOrderById(orderId);
       const serviceRes = await Promise.all([
         sendReqToTranferService(order),
         sendReqToWarehouseService(order),
+        updateOrderStatus(orderId, "chờ lấy hàng"),
       ]);
       return res
         .status(200)
@@ -30,9 +34,20 @@ class ConfirmController {
   async exchange(req, res) {
     const { orderId } = req.params;
     try {
+      let order = await getOrderById(orderId);
+      if (!order) {
+        return res
+          .status(404)
+          .json({ status: "error", message: "Order not found" });
+      }
+      const serviceRes = await Promise.all([
+        sendRedeliverReqToTranferService(order),
+        sendReqToWarehouseService(order),
+        updateOrderStatus(orderId, "đang giao"),
+      ]);
       return res
         .status(200)
-        .json({ status: "success", message: "Order exchanged" });
+        .json({ status: "success", message: "Order exchanged", serviceRes });
     } catch (error) {
       return res.status(500).json({ status: "error", message: error.message });
     }
@@ -42,9 +57,20 @@ class ConfirmController {
   async return(req, res) {
     const { orderId } = req.params;
     try {
+      let order = await getOrderById(orderId);
+      if (!order) {
+        return res
+          .status(404)
+          .json({ status: "error", message: "Order not found" });
+      }
+      let serviceRes = await Promise.all([
+        sendReturnReqToTranferService(order),
+        sendReqToWarehouseService(order),
+        updateOrderStatus(orderId, "trả hàng-hoàn tiền"),
+      ]);
       return res
         .status(200)
-        .json({ status: "success", message: "Order returned" });
+        .json({ status: "success", message: "Order returned", serviceRes });
     } catch (error) {
       return res.status(500).json({ status: "error", message: error.message });
     }

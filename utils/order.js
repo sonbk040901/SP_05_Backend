@@ -44,7 +44,7 @@ const statisticsYear = (parsedOrders) => {
       month: i + 1,
       quantity: orders.length,
       totalCapital,
-      totalRevenue: totalCapital + totalPrices,
+      totalRevenue: totalPrices - totalCapital,
       totalPrices,
       totalQuantities,
     });
@@ -53,7 +53,7 @@ const statisticsYear = (parsedOrders) => {
 };
 /**
  *
- * @param {orderExample} order
+ * @param {Order} order
  * @returns
  */
 const parseOrder = async (order) => {
@@ -133,7 +133,7 @@ const parseOrder = async (order) => {
 };
 /**
  *
- * @param {orderExample[]} orders
+ * @param {Order[]} orders
  * @returns
  */
 const parseMultiOrder = async (orders) => {
@@ -145,134 +145,84 @@ const parseMultiOrder = async (orders) => {
   );
   return parsedOrders;
 };
-/**
- *
- * @param {orderExample} order
- * @returns
- */
-const parseRequestTranferService = async (order) => {
-  const {
-    orderId,
-    warehouse = {
-      address: {
-        ward: "1A0302",
-        district: "1488",
-        province: "201",
-        detail: "Số 1 Đại Cồ Việt, Bách Khoa, Hai Bà Trưng, Hà Nội",
-      },
-    },
-    // name = "Nguyễn Văn A",
-    // phone = "0123456789",
-    DistrictID,
-    ProvinceID,
-    WardCode,
-    detailAddress,
-    total,
-    total_price: cod,
-    weigth = 0,
-    products: details,
-  } = order;
-  const user = await getUserById(order.userId);
-  const receiver = {
-    name: user.name,
-    phone: user.phoneNumber,
-    address: {
-      ward: WardCode,
-      district: DistrictID,
-      province: ProvinceID,
-      detail: detailAddress,
-    },
-  };
-  const products = details.map((detail) => {
-    const {
-      productId: id,
-      productName: name,
-      productStatus: status,
-      price,
-      quantity,
-      img,
-      size,
-      color,
-    } = detail;
-    return {
-      id,
-      name,
-      status,
-      price,
-      quantity,
-      img,
-      size,
-      color,
-    };
-  });
-  const body = { orderId, warehouse, receiver, cod, weigth, products };
-  return body;
-};
-const parseRequestWarehouseService = async (order) => {
-  const { products = [] } = order;
-  const product = (await getProductByItemId(products[0].productId)).data;
-  const productId = product.product_id;
-  const items = products.map((product) => {
-    const { productId: itemId, quantity } = product;
-    return {
-      productId,
-      itemId,
-      quantity,
-      goodQuantity: 1,
-      badQuantity: 0,
-    };
-  });
-  return {
-    items,
-  };
-};
-const orderExample = {
-  orderId: 2,
-  status: "thành công",
-  payment_method: "momo",
-  userId: 21,
-  created_at: "1998-12-31 15:30:28",
-  update_at: "1998-12-31 15:30:56",
-  shiptime_start_at: "1999-01-01 02:30:28",
-  completed_at: "1999-01-01 02:45:00",
-  paytime: "1999-01-01 02:55:28",
-  order_time: "1998-12-31 15:50:00",
-  DistrictID: "1488",
-  ProvinceID: "201",
-  WardCode: "1A0302",
-  detailAddress: "hai ba trung ha noi",
-  total_price: 190000,
-  comment: "",
-  rate: "",
-  products: [
-    {
-      productId: 4,
-      productName: "Vở Campus",
-      productStatus: "1",
-      price: "20000",
-      quantity: 3,
-      img: "https://ngoclanvpp.vn/User_folder_upload/admin/images/Vo-Campus-NB-BDAW120-2-120-trang.jpeg",
-      size: "80Tr",
-      color: "Hồng",
-    },
-    {
-      productId: 5,
-      productName: "Tai nghe",
-      productStatus: "1",
-      price: "100000",
-      quantity: 1,
-      img: "https://cdn.nguyenkimmall.com/images/detailed/605/10042790-tai-nghe-bluetooth-prolink-phb6003e-den-do-1.jpg",
-      size: "2XL",
-      color: "Đen",
-    },
-  ],
-};
+// const orderExample = {
+//   orderId: 2,
+//   status: "thành công",
+//   payment_method: "momo",
+//   userId: 21,
+//   created_at: "1998-12-31 15:30:28",
+//   update_at: "1998-12-31 15:30:56",
+//   shiptime_start_at: "1999-01-01 02:30:28",
+//   completed_at: "1999-01-01 02:45:00",
+//   paytime: "1999-01-01 02:55:28",
+//   order_time: "1998-12-31 15:50:00",
+//   DistrictID: "1488",
+//   ProvinceID: "201",
+//   WardCode: "1A0302",
+//   detailAddress: "hai ba trung ha noi",
+//   total_price: 190000,
+//   comment: "",
+//   rate: "",
+//   products: [
+//     {
+//       productId: 4,
+//       productName: "Vở Campus",
+//       productStatus: "1",
+//       price: "20000",
+//       quantity: 3,
+//       img: "https://ngoclanvpp.vn/User_folder_upload/admin/images/Vo-Campus-NB-BDAW120-2-120-trang.jpeg",
+//       size: "80Tr",
+//       color: "Hồng",
+//     },
+//     {
+//       productId: 5,
+//       productName: "Tai nghe",
+//       productStatus: "1",
+//       price: "100000",
+//       quantity: 1,
+//       img: "https://cdn.nguyenkimmall.com/images/detailed/605/10042790-tai-nghe-bluetooth-prolink-phb6003e-den-do-1.jpg",
+//       size: "2XL",
+//       color: "Đen",
+//     },
+//   ],
+// };
 module.exports = {
   statistics,
   statisticsYear,
   parseOrder,
   parseMultiOrder,
-  parseRequestTranferService,
-  parseRequestWarehouseService,
-  orderExample, //as type
 };
+/**
+ * @typedef {{
+ * productId: number,
+ * productName: string,
+ * productStatus: string,
+ * price: string,
+ * quantity: number,
+ * img: string,
+ * size: string,
+ * color: string
+ * }} Product
+ */
+/**
+ * @typedef {{
+ * orderId: number,
+ * status: string,
+ * payment_method: string,
+ * userId: number,
+ * created_at: Date,
+ * update_at: Date,
+ * shiptime_start_at: Date,
+ * completed_at: Date,
+ * paytime: Date,
+ * order_time: Date,
+ * DistrictID: string,
+ * ProvinceID: string,
+ * WardCode: string,
+ * detailAddress: string,
+ * total_price: number,
+ * comment: string,
+ * rate: string,
+ * products: Product[]
+ * }} Order
+ */
