@@ -8,6 +8,11 @@
 $ npm install
 ```
 ## Setup env
+- In /src folder
+```bash
+touch .env
+```
+- .env file example
 ```
 PORT = 5000
 BASE_URL_TRANSFER = "https://tungsnk.tech:8082/api/"
